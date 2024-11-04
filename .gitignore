@@ -1,0 +1,26 @@
+# repo-specific stuff
+pred.txt
+multi-bleu.perl
+*.pt
+\#*#
+.idea
+.idea/*
+*.sublime-*
+.DS_Store
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+*.egg-info/
+
+tensorboard/*
+exp/
+exp/*

@@ -1,0 +1,11 @@
+model: exp/train_ckif_1_4/p2r_step_7430.pt
+src: ./dataset/mixed/client_1/test/src-test.txt
+output: ./exp/train_ckif_1_4/p2r_step_7430-results.txt
+gpu: 0
+beam_size: 10
+n_best: 10
+batch_size: 10240
+batch_type: tokens
+max_length: 500
+seed: 0
+# with_score: True
