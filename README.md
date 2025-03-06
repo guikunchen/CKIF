@@ -1,6 +1,6 @@
 # Chemical knowledge-informed framework for privacy-aware retrosynthesis learning
 
-This is the official implementation of "Chemical knowledge-informed framework for privacy-aware retrosynthesis learning".
+This is the official implementation of "[Chemical knowledge-informed framework for privacy-aware retrosynthesis learning](https://arxiv.org/abs/2502.19119)".
 
 ## Environment Preparation
 
@@ -37,7 +37,7 @@ If you clone this repo, the datasets should be like this:
 │  ├── empty.txt
 ```
 
-For the "mixed" folder, clients 1-6 are from USPTO-50K; clients 7-8 are from USPTO-MIT. For the "TPL" folder, all clients are from USPTO 1k TPL.
+For the "mixed" folder, clients 1-6 are from USPTO-50K; clients 7-8 are from USPTO-MIT. For the "TPL" folder, all clients are from USPTO 1k TPL. See [DATASET.md](DATASET.md) for the detailed dataset acquisition.
 
 ## Training and Evaluation
 
@@ -50,6 +50,34 @@ bash cmds/translate_eval_ckif_1_4.sh
 ```
 
 See folder [cmds](cmds/) for more scripts for training and evaluation.
+
+## Parameter Configuration Instruction
+
+```shell
+python tools/ckif_train.py --help
+```
+
+## Core Functions
+
+For reproducibility, using a single machine is sufficient for monitoring the federated learning process. CKIF can be simply applied in real-world applications by exchanging only the model parameters (without sharing data across clients).
+
+### Monitoring local learning
+```python
+cmds = []
+for client_idx in range(args.num_clients):
+    train_steps = int(client_data_lens[client_idx] * args.num_local_epochs / args.num_local_bs)
+    update_yml_cfg(os.path.join(args.save_dir, f'client_{client_idx}/cfg.yml'), os.path.join(args.save_dir, f'client_{client_idx}/cfg.yml'), {'train_from': os.path.join(args.save_dir, 'client_{}/p2r_step_{}_aligned.pt'.format(client_idx, train_steps)), 'save_model': os.path.join(args.save_dir, f'client_{client_idx}/p2r')})
+    cmds.append('CUDA_VISIBLE_DEVICES={} onmt_train -config {}'.format(client_idx % args.num_gpus, os.path.join(args.save_dir, f'client_{client_idx}/cfg.yml')))
+exit_code = subprocess.call(' & '.join(cmds), shell='bash')
+```
+
+This preserves privacy through client-local data processing and model training, ensuring raw user data never leaves client devices. It can be further enhanced via encrypted parameter exchange (not implemented here for saving computing resources).
+
+### Model aggregation
+See the aggregate_model function in [ckif_train.py](tools/ckif_train.py).
+
+### Chemical knowledge-informed weighting
+See the compute_weights_val function in [ckif_train.py](tools/ckif_train.py).
 
 
 ## Acknowledgment

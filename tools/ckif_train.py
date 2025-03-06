@@ -122,18 +122,12 @@ def aggregate_model(args, round_idx, ckpt_weights, client_steps):
             if i == 0:
                 weighted_m = m
                 for k in weighted_m['model']:
-                    if args.is_decouple_encoder and k.startswith('encoder'):
-                        weighted_m['model'][k].mul_(ckpt_weights[i])
-                    else:
-                        weighted_m['model'][k].mul_(weights[i])
+                    weighted_m['model'][k].mul_(weights[i])
                 for k in weighted_m['generator']:
                     weighted_m['generator'][k].mul_(weights[i])
             else:
                 for (k, v) in m['model'].items():
-                    if args.is_decouple_encoder and k.startswith('encoder'):
-                        weighted_m['model'][k].add_(v * ckpt_weights[i])
-                    else:
-                        weighted_m['model'][k].add_(v * weights[i])
+                    weighted_m['model'][k].add_(v * weights[i])
                 for (k, v) in m['generator'].items():
                     weighted_m['generator'][k].add_(v * weights[i])
         torch.save(weighted_m, model_files[client_idx][:-3] + '_aligned.pt')
@@ -181,21 +175,31 @@ def main(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--cur_round', type=int, default=0)
-    parser.add_argument('--keep_last', type=int, default=10)
-    parser.add_argument('--num_round', type=int, default=50)
-    parser.add_argument('--num_local_epochs', type=int, default=5)
-    parser.add_argument('--num_local_bs', type=int, default=64)
-    parser.add_argument('--num_clients', type=int, default=4)
-    parser.add_argument('--num_finetune', type=int, default=10)
-    parser.add_argument('--num_gpus', type=int, default=8)
-    parser.add_argument('--softmax_temp', type=float, default=1.)
-    parser.add_argument('--is_decouple_encoder', action='store_true')
-    parser.add_argument('--agg_self_w', type=str, default='n_client')
-    parser.add_argument('--save_dir', type=str, default='./exp/tmp/')
-    parser.add_argument('--config', type=str, required=True)
-    parser.add_argument('--data_paths', type=str, required=True, help='seperated by ,')
+    parser = argparse.ArgumentParser(description="CKIF Hyperparameters")
+    parser.add_argument('--cur_round', type=int, default=0,
+                        help='Current round number to start/resume training (default: 0)')
+    parser.add_argument('--num_round', type=int, default=50,
+                        help='Total number of federated communication rounds (default: 50)')
+    parser.add_argument('--num_local_epochs', type=int, default=5,
+                        help='Number of local training epochs per client (default: 5)')
+    parser.add_argument('--num_local_bs', type=int, default=64,
+                        help='Local batch size for client training (default: 64)')
+    parser.add_argument('--num_clients', type=int, default=4,
+                        help='Total number of participating clients (default: 4)')
+    parser.add_argument('--num_finetune', type=int, default=10,
+                        help='Number of fine-tuning epochs (default: 10)')
+    parser.add_argument('--num_gpus', type=int, default=4,
+                        help='Number of GPUs to use for training (default: 4)')
+    parser.add_argument('--softmax_temp', type=float, default=1.5,
+                        help='Temperature parameter for softmax smoothing (default: 1.5)')
+    parser.add_argument('--agg_self_w', type=str, default='n_client',
+                        help='Weighting scheme for model aggregation [options: "n_client", "equal"] (default: "n_client")')
+    parser.add_argument('--save_dir', type=str, default='./exp/tmp/',
+                        help='Directory to save logs, models, and results (default: "./exp/tmp/")')
+    parser.add_argument('--config', type=str, required=True,
+                        help='Path to configuration file defining model and training parameters')
+    parser.add_argument('--data_paths', type=str, required=True,
+                        help='Comma-separated paths to client-specific datasets (required)')
 
     args = parser.parse_args()
     args.data_paths = args.data_paths.strip().split(',')
